@@ -1,6 +1,9 @@
 # Build output
 dist/
 
+# Test folders
+test-*/
+
 # Logs
 logs
 *.log
