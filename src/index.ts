@@ -163,8 +163,150 @@ async function createReactFrontend(projectPath: string, projectName: string): Pr
     
     console.log(chalk.green('✅ React app created'));
     
+    // Setup TailwindCSS
+    await setupTailwindCSS(projectPath);
+    
   } catch (error) {
     console.error(chalk.red('❌ Failed to create React frontend'));
+    if (error instanceof Error) {
+      console.error(chalk.red('Error details:'), error.message);
+    }
+    throw error;
+  }
+}
+
+async function setupTailwindCSS(projectPath: string): Promise<void> {
+  console.log(chalk.blue('🎨 Setting up TailwindCSS...'));
+  
+  const frontendPath = join(projectPath, 'frontend');
+  const { spawn } = await import('child_process');
+  const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+  
+  try {
+    // Install TailwindCSS
+    console.log(chalk.gray('Installing TailwindCSS...'));
+    await new Promise<void>((resolve, reject) => {
+      const child = spawn(npmCommand, ['install', 'tailwindcss', '@tailwindcss/vite'], {
+        cwd: frontendPath,
+        stdio: 'inherit',
+        shell: true
+      });
+      
+      child.on('close', (code) => {
+        if (code === 0) {
+          resolve();
+        } else {
+          reject(new Error(`TailwindCSS installation failed with code ${code}`));
+        }
+      });
+      
+      child.on('error', (error) => {
+        reject(error);
+      });
+    });
+    
+    // Update vite.config.ts
+    const viteConfig = `import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import tailwindcss from '@tailwindcss/vite'
+
+// https://vitejs.dev/config/
+export default defineConfig({
+  plugins: [
+    react(),
+    tailwindcss(),
+  ],
+})
+`;
+    
+    writeFileSync(join(frontendPath, 'vite.config.ts'), viteConfig);
+    
+    // Update src/index.css
+    const indexCSS = `@import "tailwindcss";
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+}
+`;
+    
+    writeFileSync(join(frontendPath, 'src', 'index.css'), indexCSS);
+    
+    // Update App.tsx with a simple TailwindCSS example
+    const appTsx = `import { useState } from 'react'
+import './App.css'
+
+function App() {
+  const [count, setCount] = useState(0)
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
+      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+        <h1 className="text-4xl font-bold text-white mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+          Injective EVM dApp
+        </h1>
+        
+        <div className="space-y-6">
+          <p className="text-gray-200 text-lg">
+            Your Injective dApp is ready! 🚀
+          </p>
+          
+          <div className="flex items-center justify-center space-x-4">
+            <button
+              onClick={() => setCount((count) => count - 1)}
+              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              -
+            </button>
+            
+            <span className="text-2xl font-mono text-white bg-black/20 px-4 py-2 rounded-lg">
+              {count}
+            </span>
+            
+            <button
+              onClick={() => setCount((count) => count + 1)}
+              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+            >
+              +
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+            <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-4">
+              <h3 className="text-blue-300 font-semibold mb-2">Smart Contracts</h3>
+              <p className="text-gray-300 text-sm">Coming in Stage 3: Foundry setup</p>
+            </div>
+            
+            <div className="bg-purple-500/20 border border-purple-400/30 rounded-lg p-4">
+              <h3 className="text-purple-300 font-semibold mb-2">Web3 Integration</h3>
+              <p className="text-gray-300 text-sm">Coming in Stage 4: wagmi + viem</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export default App
+`;
+    
+    writeFileSync(join(frontendPath, 'src', 'App.tsx'), appTsx);
+    
+    console.log(chalk.green('✅ TailwindCSS setup complete'));
+    
+  } catch (error) {
+    console.error(chalk.red('❌ Failed to setup TailwindCSS'));
     if (error instanceof Error) {
       console.error(chalk.red('Error details:'), error.message);
     }
@@ -182,8 +324,8 @@ A full-stack dApp built with Injective EVM
 
 \`\`\`
 ${projectName}/
-├── contracts/                # Smart contracts (Foundry)
-├── frontend/                # React frontend (Vite + TypeScript)
+├── contracts/                # Smart contracts (Foundry) - Coming Soon
+├── frontend/                # React frontend (Vite + TypeScript + TailwindCSS)
 └── README.md               # This file
 \`\`\`
 
@@ -199,7 +341,13 @@ npm run dev
 
 Open http://localhost:5173 in your browser!
 
-### 2. Smart Contracts (Coming Soon)
+The frontend comes pre-configured with:
+- ⚡ **Vite** - Lightning fast build tool
+- ⚛️  **React 19** - Latest React with TypeScript
+- 🎨 **TailwindCSS** - Utility-first CSS framework (new @tailwindcss/vite plugin)
+- 🌟 **Beautiful gradient UI** - Ready-to-use components
+
+### 2. Smart Contracts (Coming in Stage 3)
 
 \`\`\`bash
 cd contracts
@@ -210,17 +358,17 @@ forge test
 
 ## Tech Stack
 
+- **Frontend**: React + Vite + TypeScript + TailwindCSS ✅
 - **Smart Contracts**: Foundry + Solidity (Coming Soon)
-- **Frontend**: React + Vite + TypeScript
 - **Web3**: wagmi + viem + @tanstack/react-query (Coming Soon)
 - **Chain**: Injective EVM
 
 ## Next Steps
 
-1. Start the React development server
-2. Stage 3: Foundry smart contract setup
-3. Stage 4: Web3 integration with wagmi/viem
-4. Stage 5: TailwindCSS styling
+1. ✅ Start the React development server
+2. 🔧 Stage 3: Foundry smart contract setup
+3. 🌐 Stage 4: Web3 integration with wagmi/viem
+4. 🚀 Stage 5: Deploy to Injective EVM
 `;
 
   writeFileSync(join(projectPath, 'README.md'), readmeContent);
