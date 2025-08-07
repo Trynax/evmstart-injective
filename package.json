@@ -1,0 +1,43 @@
+{
+  "name": "evmstart-injective",
+  "version": "1.0.0",
+  "description": "Kickstart your Injective EVM dApp with one command (Foundry + React)",
+  "main": "dist/index.js",
+  "bin": {
+    "evmstart-injective": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "injective",
+    "evm",
+    "dapp",
+    "foundry",
+    "react",
+    "vite",
+    "wagmi",
+    "viem",
+    "cli"
+  ],
+  "author": "Trynax",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/prompts": "^2.4.9",
+    "tsx": "^4.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "ora": "^7.0.1",
+    "prompts": "^2.4.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
