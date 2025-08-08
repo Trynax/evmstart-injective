@@ -221,89 +221,15 @@ export default defineConfig({
     
     writeFileSync(join(frontendPath, 'vite.config.ts'), viteConfig);
     
-    // Update src/index.css
-    const indexCSS = `@import "tailwindcss";
-
-body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
-`;
-    
-    writeFileSync(join(frontendPath, 'src', 'index.css'), indexCSS);
-    
-    // Update App.tsx with a simple TailwindCSS example
-    const appTsx = `import { useState } from 'react'
-import './App.css'
-
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-      <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
-        <h1 className="text-4xl font-bold text-white mb-6 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-          Injective EVM dApp
-        </h1>
-        
-        <div className="space-y-6">
-          <p className="text-gray-200 text-lg">
-            Your Injective dApp is ready! 🚀
-          </p>
-          
-          <div className="flex items-center justify-center space-x-4">
-            <button
-              onClick={() => setCount((count) => count - 1)}
-              className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              -
-            </button>
-            
-            <span className="text-2xl font-mono text-white bg-black/20 px-4 py-2 rounded-lg">
-              {count}
-            </span>
-            
-            <button
-              onClick={() => setCount((count) => count + 1)}
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
-            >
-              +
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
-            <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-4">
-              <h3 className="text-blue-300 font-semibold mb-2">Smart Contracts</h3>
-              <p className="text-gray-300 text-sm">Coming in Stage 3: Foundry setup</p>
-            </div>
-            
-            <div className="bg-purple-500/20 border border-purple-400/30 rounded-lg p-4">
-              <h3 className="text-purple-300 font-semibold mb-2">Web3 Integration</h3>
-              <p className="text-gray-300 text-sm">Coming in Stage 4: wagmi + viem</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-export default App
-`;
-    
-    writeFileSync(join(frontendPath, 'src', 'App.tsx'), appTsx);
+    // Add TailwindCSS import to existing index.css
+    const existingCSS = readFileSync(join(frontendPath, 'src', 'index.css'), 'utf-8');
+    const updatedCSS = `@import "tailwindcss";\n\n${existingCSS}`;
+    writeFileSync(join(frontendPath, 'src', 'index.css'), updatedCSS);
     
     console.log(chalk.green('✅ TailwindCSS setup complete'));
+    console.log(chalk.gray('   → Added @tailwindcss/vite plugin to vite.config.ts'));
+    console.log(chalk.gray('   → Added TailwindCSS import to index.css'));
+    console.log(chalk.gray('   → Default Vite React app preserved with TailwindCSS available'));
     
   } catch (error) {
     console.error(chalk.red('❌ Failed to setup TailwindCSS'));
@@ -345,7 +271,9 @@ The frontend comes pre-configured with:
 - ⚡ **Vite** - Lightning fast build tool
 - ⚛️  **React 19** - Latest React with TypeScript
 - 🎨 **TailwindCSS** - Utility-first CSS framework (new @tailwindcss/vite plugin)
-- 🌟 **Beautiful gradient UI** - Ready-to-use components
+- 📝 **Original Vite template** - Preserved with TailwindCSS classes available
+
+You can now use TailwindCSS classes in your components!
 
 ### 2. Smart Contracts (Coming in Stage 3)
 
