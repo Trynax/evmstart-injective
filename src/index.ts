@@ -37,10 +37,16 @@ program
       console.log(chalk.green(`\n🎉 Project created successfully!`));
       console.log(chalk.cyan(`📁 Location: ${projectPath}`));
       console.log(chalk.yellow('\n📋 Next steps:'));
+      console.log(chalk.blue('🌐 Frontend:'));
       console.log(chalk.gray(`   cd ${finalProjectName}/frontend`));
       console.log(chalk.gray('   npm install'));
       console.log(chalk.gray('   npm run dev'));
-      console.log(chalk.yellow('\n🌐 Then open http://localhost:5173 in your browser!'));
+      console.log(chalk.blue('\n⚒️  Smart Contracts:'));
+      console.log(chalk.gray(`   cd ${finalProjectName}/contracts`));
+      console.log(chalk.gray('   forge build'));
+      console.log(chalk.gray('   forge test'));
+      console.log(chalk.yellow('\n🌐 Frontend: http://localhost:5173'));
+      console.log(chalk.yellow('⚒️  Ready for Injective EVM deployment!'));
       
     } catch (error) {
       if (error instanceof Error) {
@@ -111,6 +117,9 @@ async function createProjectStructure(projectName: string): Promise<string> {
     // Create React frontend with Vite
     spinner.stop(); // Stop spinner to show Vite output
     await createReactFrontend(projectPath, projectName);
+    
+    // Setup Foundry for smart contracts
+    await setupFoundry(projectPath, projectName);
     
     console.log(chalk.green('✅ Project structure created'));
     return projectPath;
@@ -240,6 +249,493 @@ export default defineConfig({
   }
 }
 
+async function setupFoundry(projectPath: string, projectName: string): Promise<void> {
+  console.log(chalk.blue('⚒️  Setting up Foundry for smart contracts...'));
+  
+  const contractsPath = join(projectPath, 'contracts');
+  const { spawn } = await import('child_process');
+  
+  try {
+    // Check if forge is available
+    console.log(chalk.gray('Checking Foundry installation...'));
+    
+    const forgeCommand = process.platform === 'win32' ? 'forge.exe' : 'forge';
+    
+    // Test if forge is available
+    const testForge = await new Promise<boolean>((resolve) => {
+      const child = spawn(forgeCommand, ['--version'], {
+        stdio: 'pipe',
+        shell: true
+      });
+      
+      child.on('close', (code) => {
+        resolve(code === 0);
+      });
+      
+      child.on('error', () => {
+        resolve(false);
+      });
+    });
+    
+    if (!testForge) {
+      console.log(chalk.yellow('⚠️  Foundry not found. Installing Foundry...'));
+      
+      if (process.platform === 'win32') {
+        console.log(chalk.cyan('📥 Installing Foundry on Windows...'));
+        
+        // Use PowerShell to install Foundry on Windows
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn('powershell', [
+            '-Command',
+            'irm get.scoop.sh | iex; scoop install git; scoop bucket add main; scoop install foundry'
+          ], {
+            stdio: 'inherit',
+            shell: true
+          });
+          
+          child.on('close', (code) => {
+            if (code === 0) {
+              resolve();
+            } else {
+              console.log(chalk.yellow('📝 Foundry auto-install failed. Please install manually:'));
+              console.log(chalk.gray('   1. Install Rust: https://rustup.rs/'));
+              console.log(chalk.gray('   2. Install Foundry: curl -L https://foundry.paradigm.xyz | bash'));
+              console.log(chalk.gray('   3. Run: foundryup'));
+              resolve(); // Continue anyway
+            }
+          });
+          
+          child.on('error', () => {
+            console.log(chalk.yellow('📝 Please install Foundry manually:'));
+            console.log(chalk.gray('   Windows: https://book.getfoundry.sh/getting-started/installation#windows'));
+            resolve(); // Continue anyway
+          });
+        });
+      } else {
+        // Unix-like systems
+        console.log(chalk.cyan('📥 Installing Foundry...'));
+        await new Promise<void>((resolve, reject) => {
+          const child = spawn('sh', ['-c', 'curl -L https://foundry.paradigm.xyz | bash && source ~/.bashrc && foundryup'], {
+            stdio: 'inherit',
+            shell: true
+          });
+          
+          child.on('close', (code) => {
+            if (code === 0) {
+              resolve();
+            } else {
+              console.log(chalk.yellow('📝 Please install Foundry manually:'));
+              console.log(chalk.gray('   curl -L https://foundry.paradigm.xyz | bash'));
+              console.log(chalk.gray('   foundryup'));
+              resolve(); // Continue anyway
+            }
+          });
+          
+          child.on('error', () => {
+            console.log(chalk.yellow('📝 Please install Foundry manually:'));
+            console.log(chalk.gray('   curl -L https://foundry.paradigm.xyz | bash'));
+            resolve(); // Continue anyway
+          });
+        });
+      }
+    }
+    
+    // Initialize Foundry project
+    console.log(chalk.gray('Initializing Foundry project...'));
+    
+    const forgeInitSuccess = await new Promise<boolean>((resolve) => {
+      const child = spawn(forgeCommand, ['init', '.', '--force'], {
+        cwd: contractsPath,
+        stdio: 'inherit',
+        shell: true
+      });
+      
+      child.on('close', (code) => {
+        resolve(code === 0);
+      });
+      
+      child.on('error', () => {
+        resolve(false);
+      });
+    });
+    
+    if (forgeInitSuccess) {
+      console.log(chalk.green('✅ Foundry project initialized'));
+      
+      // Customize the initialized project for Injective EVM
+      await customizeFoundryForInjective(contractsPath, projectName);
+      
+    } else {
+      console.log(chalk.yellow('⚠️  Forge not available, creating basic structure manually...'));
+      createFoundryStructure(contractsPath, projectName);
+    }
+    
+    console.log(chalk.green('✅ Foundry setup complete'));
+    console.log(chalk.gray('   → Smart contract development ready'));
+    console.log(chalk.gray('   → Run "forge build" to compile contracts'));
+    console.log(chalk.gray('   → Run "forge test" to run tests'));
+    
+  } catch (error) {
+    console.error(chalk.red('❌ Failed to setup Foundry'));
+    if (error instanceof Error) {
+      console.error(chalk.red('Error details:'), error.message);
+    }
+    
+    // Fallback: create basic structure
+    createFoundryStructure(contractsPath, projectName);
+    console.log(chalk.yellow('⚠️  Created basic contract structure. Install Foundry manually for full functionality.'));
+  }
+}
+
+async function customizeFoundryForInjective(contractsPath: string, projectName: string): Promise<void> {
+  console.log(chalk.gray('Customizing Foundry for Injective EVM...'));
+  
+  // Update foundry.toml with Injective-specific settings
+  const foundryConfig = `[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = []
+
+# Injective EVM Configuration
+[rpc_endpoints]
+injective = "https://sentry.tm.injective.network:443"
+injective-testnet = "https://testnet.sentry.tm.injective.network:443"
+
+[etherscan]
+injective = { key = "\${INJECTIVE_API_KEY}" }
+injective-testnet = { key = "\${INJECTIVE_TESTNET_API_KEY}" }
+
+[fmt]
+bracket_spacing = true
+int_types = "long"
+line_length = 120
+multiline_func_header = "all"
+number_underscore = "thousands"
+quote_style = "double"
+tab_width = 4
+wrap_comments = true
+`;
+  
+  writeFileSync(join(contractsPath, 'foundry.toml'), foundryConfig);
+  
+  // Create an Injective-specific contract to replace the default Counter
+  const injectiveContract = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+contract ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} {
+    string public greeting;
+    address public owner;
+    
+    event GreetingChanged(string newGreeting, address changedBy);
+    
+    constructor(string memory _greeting) {
+        greeting = _greeting;
+        owner = msg.sender;
+    }
+    
+    function setGreeting(string memory _greeting) public {
+        greeting = _greeting;
+        emit GreetingChanged(_greeting, msg.sender);
+    }
+    
+    function getGreeting() public view returns (string memory) {
+        return greeting;
+    }
+    
+    function getOwner() public view returns (address) {
+        return owner;
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'src', `${projectName.replace(/-/g, '_')}.sol`), injectiveContract);
+  
+  // Create comprehensive test
+  const contractTest = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import {Test, console} from "forge-std/Test.sol";
+import {${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}} from "../src/${projectName.replace(/-/g, '_')}.sol";
+
+contract ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}Test is Test {
+    ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} public myContract;
+    address public owner = address(0x123);
+    
+    function setUp() public {
+        vm.prank(owner);
+        myContract = new ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}("Hello, Injective EVM!");
+    }
+    
+    function test_InitialGreeting() public view {
+        assertEq(myContract.getGreeting(), "Hello, Injective EVM!");
+    }
+    
+    function test_InitialOwner() public view {
+        assertEq(myContract.getOwner(), owner);
+    }
+    
+    function test_SetGreeting() public {
+        string memory newGreeting = "Hello, World!";
+        myContract.setGreeting(newGreeting);
+        assertEq(myContract.getGreeting(), newGreeting);
+    }
+    
+    function test_GreetingChangeEvent() public {
+        string memory newGreeting = "Event Test!";
+        
+        vm.expectEmit(true, true, true, true);
+        emit ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}.GreetingChanged(newGreeting, address(this));
+        
+        myContract.setGreeting(newGreeting);
+    }
+    
+    function testFuzz_SetGreeting(string memory _greeting) public {
+        myContract.setGreeting(_greeting);
+        assertEq(myContract.getGreeting(), _greeting);
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'test', `${projectName.replace(/-/g, '_')}.t.sol`), contractTest);
+  
+  // Create Injective deployment script
+  const deployScript = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import {Script, console} from "forge-std/Script.sol";
+import {${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}} from "../src/${projectName.replace(/-/g, '_')}.sol";
+
+contract Deploy${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} is Script {
+    function setUp() public {}
+
+    function run() public {
+        vm.startBroadcast();
+
+        ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} myContract = new ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}("Hello, Injective EVM!");
+
+        console.log("Contract deployed at:", address(myContract));
+        console.log("Initial greeting:", myContract.getGreeting());
+        console.log("Contract owner:", myContract.getOwner());
+
+        vm.stopBroadcast();
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'script', `Deploy.s.sol`), deployScript);
+  
+  // Create .env.example for Injective configuration
+  const envExample = `# Injective EVM Configuration
+PRIVATE_KEY=your_private_key_here
+INJECTIVE_API_KEY=your_injective_api_key_here
+INJECTIVE_TESTNET_API_KEY=your_injective_testnet_api_key_here
+
+# RPC URLs (already configured in foundry.toml)
+# INJECTIVE_RPC=https://sentry.tm.injective.network:443
+# INJECTIVE_TESTNET_RPC=https://testnet.sentry.tm.injective.network:443
+`;
+  
+  writeFileSync(join(contractsPath, '.env.example'), envExample);
+  
+  console.log(chalk.gray('   → Added Injective EVM configuration to foundry.toml'));
+  console.log(chalk.gray(`   → Created ${projectName} contract with events`));
+  console.log(chalk.gray('   → Added comprehensive tests with fuzzing'));
+  console.log(chalk.gray('   → Created Injective deployment script'));
+}
+
+function createFoundryStructure(contractsPath: string, projectName: string): void {
+  // Create foundry.toml
+  const foundryConfig = `[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+remappings = []
+
+[profile.default.model_checker]
+contracts = {}
+engine = 'chc'
+timeout = 10000
+
+[fmt]
+bracket_spacing = true
+int_types = "long"
+line_length = 120
+multiline_func_header = "all"
+number_underscore = "thousands"
+quote_style = "double"
+tab_width = 4
+wrap_comments = true
+
+[rpc_endpoints]
+injective = "https://sentry.tm.injective.network:443"
+injective-testnet = "https://testnet.sentry.tm.injective.network:443"
+`;
+  
+  writeFileSync(join(contractsPath, 'foundry.toml'), foundryConfig);
+  
+  // Create src directory and sample contract
+  mkdirSync(join(contractsPath, 'src'), { recursive: true });
+  
+  const sampleContract = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+contract ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} {
+    string public greeting;
+    
+    constructor(string memory _greeting) {
+        greeting = _greeting;
+    }
+    
+    function setGreeting(string memory _greeting) public {
+        greeting = _greeting;
+    }
+    
+    function getGreeting() public view returns (string memory) {
+        return greeting;
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'src', `${projectName.replace(/-/g, '_')}.sol`), sampleContract);
+  
+  // Create test directory and sample test
+  mkdirSync(join(contractsPath, 'test'), { recursive: true });
+  
+  const sampleTest = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import "forge-std/Test.sol";
+import "../src/${projectName.replace(/-/g, '_')}.sol";
+
+contract ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}Test is Test {
+    ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} public myContract;
+    
+    function setUp() public {
+        myContract = new ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}("Hello, Injective!");
+    }
+    
+    function testGreeting() public {
+        assertEq(myContract.getGreeting(), "Hello, Injective!");
+    }
+    
+    function testSetGreeting() public {
+        myContract.setGreeting("Hello, World!");
+        assertEq(myContract.getGreeting(), "Hello, World!");
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'test', `${projectName.replace(/-/g, '_')}.t.sol`), sampleTest);
+  
+  // Create script directory
+  mkdirSync(join(contractsPath, 'script'), { recursive: true });
+  
+  const deployScript = `// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.13;
+
+import "forge-std/Script.sol";
+import "../src/${projectName.replace(/-/g, '_')}.sol";
+
+contract Deploy${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} is Script {
+    function run() external {
+        vm.startBroadcast();
+        
+        ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())} myContract = new ${projectName.replace(/-/g, '_').replace(/^\w/, c => c.toUpperCase())}("Hello, Injective EVM!");
+        
+        console.log("Contract deployed at:", address(myContract));
+        
+        vm.stopBroadcast();
+    }
+}
+`;
+  
+  writeFileSync(join(contractsPath, 'script', `Deploy.s.sol`), deployScript);
+  
+  // Update contracts README
+  const contractsReadme = `# Smart Contracts
+
+This directory contains the smart contracts for ${projectName} built with Foundry.
+
+## Getting Started
+
+### 1. Install Dependencies (if Foundry is available)
+
+\`\`\`bash
+forge install
+\`\`\`
+
+### 2. Build Contracts
+
+\`\`\`bash
+forge build
+\`\`\`
+
+### 3. Run Tests
+
+\`\`\`bash
+forge test
+\`\`\`
+
+### 4. Deploy to Injective EVM
+
+\`\`\`bash
+# Deploy to Injective testnet
+forge script script/Deploy.s.sol --rpc-url injective-testnet --broadcast
+
+# Deploy to Injective mainnet
+forge script script/Deploy.s.sol --rpc-url injective --broadcast
+\`\`\`
+
+## Project Structure
+
+\`\`\`
+contracts/
+├── foundry.toml           # Foundry configuration
+├── src/                   # Smart contract source files
+│   └── ${projectName.replace(/-/g, '_')}.sol        # Main contract
+├── test/                  # Test files
+│   └── ${projectName.replace(/-/g, '_')}.t.sol      # Contract tests
+├── script/                # Deployment scripts
+│   └── Deploy.s.sol       # Deployment script
+└── README.md             # This file
+\`\`\`
+
+## Foundry Installation
+
+If Foundry is not installed, install it manually:
+
+### Windows
+1. Install Rust: https://rustup.rs/
+2. Install Foundry: \`curl -L https://foundry.paradigm.xyz | bash\`
+3. Run: \`foundryup\`
+
+### macOS/Linux
+\`\`\`bash
+curl -L https://foundry.paradigm.xyz | bash
+foundryup
+\`\`\`
+
+## Useful Commands
+
+\`\`\`bash
+# Format code
+forge fmt
+
+# Check gas usage
+forge test --gas-report
+
+# Run specific test
+forge test --match-test testGreeting
+
+# Generate documentation
+forge doc
+\`\`\`
+`;
+  
+  writeFileSync(join(contractsPath, 'README.md'), contractsReadme);
+}
+
 async function createInitialFiles(projectPath: string, projectName: string): Promise<void> {
   // Create main README
   const readmeContent = `# ${projectName}
@@ -250,8 +746,8 @@ A full-stack dApp built with Injective EVM
 
 \`\`\`
 ${projectName}/
-├── contracts/                # Smart contracts (Foundry) - Coming Soon
-├── frontend/                # React frontend (Vite + TypeScript + TailwindCSS)
+├── contracts/                # Smart contracts (Foundry + Solidity) ✅
+├── frontend/                # React frontend (Vite + TypeScript + TailwindCSS) ✅
 └── README.md               # This file
 \`\`\`
 
@@ -273,30 +769,58 @@ The frontend comes pre-configured with:
 - 🎨 **TailwindCSS** - Utility-first CSS framework (new @tailwindcss/vite plugin)
 - 📝 **Original Vite template** - Preserved with TailwindCSS classes available
 
-You can now use TailwindCSS classes in your components!
-
-### 2. Smart Contracts (Coming in Stage 3)
+### 2. Smart Contracts with Foundry ✅
 
 \`\`\`bash
 cd contracts
-# Coming in Stage 3: Foundry setup
+
+# Build contracts
 forge build
+
+# Run tests
 forge test
+
+# Deploy to Injective testnet
+forge script script/Deploy.s.sol --rpc-url injective-testnet --broadcast
+\`\`\`
+
+The contracts directory includes:
+- 🔨 **Foundry** - Fast Solidity testing framework
+- 📝 **Sample Contract** - Ready-to-use smart contract template
+- 🧪 **Tests** - Comprehensive test suite
+- 🚀 **Deploy Script** - Injective EVM deployment ready
+
+### 3. Web3 Integration (Coming in Stage 4)
+
+\`\`\`bash
+# Coming in Stage 4: Connect frontend to contracts
+npm install wagmi viem @tanstack/react-query
 \`\`\`
 
 ## Tech Stack
 
 - **Frontend**: React + Vite + TypeScript + TailwindCSS ✅
-- **Smart Contracts**: Foundry + Solidity (Coming Soon)
+- **Smart Contracts**: Foundry + Solidity ✅
 - **Web3**: wagmi + viem + @tanstack/react-query (Coming Soon)
 - **Chain**: Injective EVM
 
 ## Next Steps
 
 1. ✅ Start the React development server
-2. 🔧 Stage 3: Foundry smart contract setup
+2. ✅ Build and test smart contracts with Foundry
 3. 🌐 Stage 4: Web3 integration with wagmi/viem
 4. 🚀 Stage 5: Deploy to Injective EVM
+
+## Foundry Commands
+
+\`\`\`bash
+# In the contracts/ directory:
+forge build              # Compile contracts
+forge test               # Run tests
+forge test --gas-report  # Gas usage report
+forge fmt                # Format code
+forge doc                # Generate docs
+\`\`\`
 `;
 
   writeFileSync(join(projectPath, 'README.md'), readmeContent);
