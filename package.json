@@ -1,6 +1,6 @@
 {
   "name": "evmstart-injective",
-  "version": "1.2.5",
+  "version": "1.2.6",
   "type": "module",
   "description": "Kickstart your Injective EVM dApp with one command (Foundry + React)",
   "main": "dist/index.js",
