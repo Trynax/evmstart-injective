@@ -5,6 +5,7 @@ import './App.css'
 import { Web3Provider } from './Web3Provider'
 import { WalletConnect } from './components/WalletConnect'
 import { Counter } from './components/Counter'
+import { NetworkSwitcher } from './components/NetworkSwitcher'
 
 function App() {
   const [count, setCount] = useState(0)
@@ -31,6 +32,9 @@ function App() {
       <div className="container mx-auto max-w-3xl p-6">
         <div className="my-6">
           <WalletConnect />
+        </div>
+        <div className="my-6">
+          <NetworkSwitcher />
         </div>
         <div className="my-6">
           <Counter />

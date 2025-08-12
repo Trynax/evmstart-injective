@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { useCounter } from '../hooks/useCounter'
+import { useContract } from '../hooks/useContract'
 
 export function Counter() {
   const { isConnected } = useAccount()
-  const { count, isCountLoading, increment, setNumber, isWritePending, isConfirming, isSuccess, writeError } = useCounter()
+  const { count, isCountLoading, increment, setNumber, isWritePending, isConfirming, isSuccess, writeError } = useContract()
   const [customValue, setCustomValue] = useState('')
 
   const onSet = () => {

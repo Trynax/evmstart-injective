@@ -2,12 +2,45 @@ import { http, createConfig } from 'wagmi'
 import { defineChain } from 'viem'
 import { metaMask, walletConnect } from 'wagmi/connectors'
 
-// Minimal Injective EVM chain placeholder (adjust RPC as needed)
-export const injectiveEvm = defineChain({
-  id: 2525,
+// Injective EVM Testnet
+export const injectiveEvmTestnet = defineChain({
+  id: 1439,
+  name: 'Injective EVM Testnet',
+  nativeCurrency: { name: 'INJ', symbol: 'INJ', decimals: 18 },
+  rpcUrls: { 
+    default: { http: ['https://k8s.testnet.json-rpc.injective.network/'] },
+    public: { http: ['https://k8s.testnet.json-rpc.injective.network/'] }
+  },
+  blockExplorers: {
+    default: { name: 'Injective Testnet Explorer', url: 'https://testnet.blockscout.injective.network' },
+  },
+  testnet: true,
+})
+
+// Injective EVM Mainnet
+export const injectiveEvmMainnet = defineChain({
+  id: 1776,
   name: 'Injective EVM',
   nativeCurrency: { name: 'INJ', symbol: 'INJ', decimals: 18 },
-  rpcUrls: { default: { http: ['https://rpc.example.injective-evm'] } },
+  rpcUrls: { 
+    default: { http: ['https://sentry.evm-rpc.injective.network/'] },
+    public: { http: ['https://sentry.evm-rpc.injective.network/'] }
+  },
+  blockExplorers: {
+    default: { name: 'Injective Explorer', url: 'https://blockscout.injective.network' },
+  },
+})
+
+// Local Anvil for development
+export const anvil = defineChain({
+  id: 31337,
+  name: 'Anvil',
+  nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+  rpcUrls: { 
+    default: { http: ['http://127.0.0.1:8545'] },
+    public: { http: ['http://127.0.0.1:8545'] }
+  },
+  testnet: true,
 })
 
 export const CONTRACT_ADDRESSES = {
@@ -15,12 +48,16 @@ export const CONTRACT_ADDRESSES = {
 } as const
 
 export const config = createConfig({
-  chains: [injectiveEvm],
+  chains: [anvil, injectiveEvmTestnet, injectiveEvmMainnet],
   connectors: [
     metaMask(),
     walletConnect({ projectId: 'your-project-id' }),
   ],
-  transports: { [injectiveEvm.id]: http() },
+  transports: { 
+    [anvil.id]: http(),
+    [injectiveEvmTestnet.id]: http(),
+    [injectiveEvmMainnet.id]: http(),
+  },
 })
 
 declare module 'wagmi' {

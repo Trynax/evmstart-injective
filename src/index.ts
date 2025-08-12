@@ -31,26 +31,79 @@ program
       
       console.log(chalk.green(`\n✅ Project name: ${finalProjectName}`));
       
-  // Create project from templates
-  const projectPath = await createProjectFromTemplates(finalProjectName);
-      
+      // Create project from templates
+      const projectPath = await createProjectFromTemplates(finalProjectName);
       console.log(chalk.green(`\n🎉 Project created successfully!`));
       console.log(chalk.cyan(`📁 Location: ${projectPath}`));
+
+      // Start Anvil (local chain)
+      console.log(chalk.blue('\n🚦 Starting Anvil (local blockchain)...'));
+      const { spawn } = await import('child_process');
+      const anvilProcess = spawn('anvil', ['--silent'], {
+        cwd: join(projectPath, 'contracts'),
+        shell: true,
+        detached: true,
+        stdio: 'ignore',
+      });
+      // Wait a moment for Anvil to start
+      await new Promise(res => setTimeout(res, 2000));
+
+
+      // Deploy Counter contract
+      console.log(chalk.blue('🚀 Deploying Counter contract to Anvil...'));
+      const deployCmd = spawn('forge', [
+        'script', 'script/Counter.s.sol', '--rpc-url', 'http://127.0.0.1:8545', '--broadcast', '--json'
+      ], {
+        cwd: join(projectPath, 'contracts'),
+        shell: true,
+      });
+
+      let deployOutput = '';
+      for await (const chunk of deployCmd.stdout) {
+        deployOutput += chunk.toString();
+      }
+      for await (const chunk of deployCmd.stderr) {
+        deployOutput += chunk.toString();
+      }
+
+      // After deployment, read broadcast/run-latest.json for Anvil chainId 31337
+      const broadcastDir = join(projectPath, 'contracts', 'broadcast', 'Counter.s.sol', '31337');
+      const latestJsonPath = join(broadcastDir, 'run-latest.json');
+      let deployedAddress = null;
+      try {
+        if (existsSync(latestJsonPath)) {
+          const latestJson = JSON.parse(readFileSync(latestJsonPath, 'utf-8'));
+          // Find contract address for Counter
+          if (latestJson && latestJson.transactions) {
+            for (const tx of latestJson.transactions) {
+              if (tx.contractName === 'Counter' && tx.contractAddress) {
+                deployedAddress = tx.contractAddress;
+                break;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.log(chalk.red('Error reading broadcast/run-latest.json:'), err);
+      }
+
+      if (deployedAddress) {
+        console.log(chalk.green(`✅ Counter deployed at: ${deployedAddress}`));
+        await updateFrontendContractAddress(join(projectPath, 'frontend', 'src', 'wagmi.ts'), deployedAddress);
+        console.log(chalk.green('🔗 Frontend config updated with deployed address.'));
+      } else {
+        console.log(chalk.red('❌ Could not find deployed contract address in broadcast/run-latest.json. Please update frontend manually.'));
+      }
+
       console.log(chalk.yellow('\n📋 Next steps:'));
-  console.log(chalk.blue('🌐 Frontend:'));
-  console.log(chalk.gray(`   cd ${finalProjectName}/frontend`));
-  console.log(chalk.gray('   npm install'));
-  console.log(chalk.gray('   npm run dev'));
-  console.log(chalk.gray('   # Update src/wagmi.ts RPC URL, WalletConnect projectId, and contract address'));
-  console.log(chalk.blue('\n⚒️  Smart Contracts:'));
-  console.log(chalk.gray(`   cd ${finalProjectName}/contracts`));
-  console.log(chalk.gray('   forge install')); 
-  console.log(chalk.gray('   forge build'));
-  console.log(chalk.gray('   forge test'));
-  console.log(chalk.gray('   # Deploy script: script/Counter.s.sol'));
-  console.log(chalk.yellow('\n🌐 Frontend: http://localhost:5173'));
-  console.log(chalk.yellow('🔗 After deploy, set CONTRACT_ADDRESSES.Counter in frontend/src/wagmi.ts'));
-      
+      console.log(chalk.blue('🌐 Frontend:'));
+      console.log(chalk.gray(`   cd ${finalProjectName}/frontend`));
+      console.log(chalk.gray('   npm install'));
+      console.log(chalk.gray('   npm run dev'));
+      console.log(chalk.blue('\n⚒️  Smart Contracts:'));
+      console.log(chalk.gray(`   cd ${finalProjectName}/contracts`));
+      console.log(chalk.gray('   forge test'));
+      console.log(chalk.yellow('\n🌐 Frontend: http://localhost:5173'));
     } catch (error) {
       if (error instanceof Error) {
         console.error(chalk.red('❌ Error:'), error.message);
@@ -259,6 +312,13 @@ forge test
 `;
 
   writeFileSync(join(projectPath, 'contracts', 'README.md'), contractsReadme);
+}
+
+// Update frontend wagmi.ts with deployed contract address
+async function updateFrontendContractAddress(wagmiPath: string, address: string) {
+  let wagmiContent = readFileSync(wagmiPath, 'utf-8');
+  wagmiContent = wagmiContent.replace(/Counter: '0x[a-fA-F0-9]{40}'/, `Counter: '${address}'`);
+  writeFileSync(wagmiPath, wagmiContent);
 }
 
 program.parse();

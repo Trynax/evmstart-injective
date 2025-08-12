@@ -1,11 +1,11 @@
 import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
 import { CONTRACT_ADDRESSES } from '../wagmi'
-import { counterAbi } from '../abi/Counter'
+import { contractAbi } from '../abi/Contract'
 
-export function useCounter() {
+export function useContract() {
   const { data: count, isLoading: isCountLoading, refetch } = useReadContract({
     address: CONTRACT_ADDRESSES.Counter,
-    abi: counterAbi,
+    abi: contractAbi,
     functionName: 'number',
   })
 
@@ -13,8 +13,8 @@ export function useCounter() {
 
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash })
 
-  const increment = () => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: counterAbi, functionName: 'increment' })
-  const setNumber = (value: bigint) => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: counterAbi, functionName: 'setNumber', args: [value] })
+  const increment = () => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: contractAbi, functionName: 'increment' })
+  const setNumber = (value: bigint) => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: contractAbi, functionName: 'setNumber', args: [value] })
 
   return { count, isCountLoading, increment, setNumber, isWritePending, isConfirming, isSuccess, writeError, hash, refetch }
 }

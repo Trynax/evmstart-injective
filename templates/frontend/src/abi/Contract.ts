@@ -1,4 +1,4 @@
-export const counterAbi = [
+export const contractAbi = [
   {
     "inputs": [],
     "name": "increment",
