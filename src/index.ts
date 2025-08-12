@@ -52,7 +52,10 @@ program
       // Deploy Counter contract
       console.log(chalk.blue('🚀 Deploying Counter contract to Anvil...'));
       const deployCmd = spawn('forge', [
-        'script', 'script/Counter.s.sol', '--rpc-url', 'http://127.0.0.1:8545', '--broadcast', '--json'
+        'script', 'script/Counter.s.sol', 
+        '--rpc-url', 'http://127.0.0.1:8545', 
+        '--broadcast', 
+        '--private-key', '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'
       ], {
         cwd: join(projectPath, 'contracts'),
         shell: true,
@@ -65,6 +68,10 @@ program
       for await (const chunk of deployCmd.stderr) {
         deployOutput += chunk.toString();
       }
+
+      // Wait for transaction to be mined
+      console.log(chalk.blue('⏳ Waiting for transaction to be mined...'));
+      await new Promise(res => setTimeout(res, 3000));
 
       // After deployment, read broadcast/run-latest.json for Anvil chainId 31337
       const broadcastDir = join(projectPath, 'contracts', 'broadcast', 'Counter.s.sol', '31337');

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useContract } from '../hooks/useContract'
+import { CONTRACT_ADDRESSES } from '../wagmi'
 
 export function Counter() {
-  const { isConnected } = useAccount()
-  const { count, isCountLoading, increment, setNumber, isWritePending, isConfirming, isSuccess, writeError } = useContract()
+  const { isConnected, chain } = useAccount()
+  const { count, isCountLoading, increment, setNumber, isWritePending, isConfirming, isSuccess, writeError, readError } = useContract()
   const [customValue, setCustomValue] = useState('')
 
   const onSet = () => {
@@ -19,6 +20,15 @@ export function Counter() {
 
   return (
     <div className="border rounded p-6 space-y-4">
+      {/* Debug info */}
+      <div className="text-xs text-gray-500 mb-4">
+        <div>Chain: {chain?.name} (ID: {chain?.id})</div>
+        <div>Contract: {CONTRACT_ADDRESSES.Counter}</div>
+        <div>Count: {count?.toString() ?? 'undefined'}</div>
+        <div>Loading: {isCountLoading ? 'Yes' : 'No'}</div>
+        {readError && <div className="text-red-500">Read Error: {readError.message}</div>}
+      </div>
+      
       <div className="text-center">
         <h2 className="text-xl font-semibold mb-2">Counter</h2>
         {isCountLoading ? (
