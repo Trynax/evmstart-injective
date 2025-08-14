@@ -109,8 +109,12 @@ program
       console.log(chalk.gray('   npm run dev'));
       console.log(chalk.blue('\n⚒️  Smart Contracts:'));
       console.log(chalk.gray(`   cd ${finalProjectName}/contracts`));
-      console.log(chalk.gray('   forge test'));
+      console.log(chalk.gray('   make help           # See all available commands'));
+      console.log(chalk.gray('   make test           # Run contract tests'));
+      console.log(chalk.gray('   make setup-wallet   # Create secure keystore'));
+      console.log(chalk.gray('   make deploy-testnet WALLET=your-wallet'));
       console.log(chalk.yellow('\n🌐 Frontend: http://localhost:5173'));
+      console.log(chalk.cyan('🔐 Security: Use keystores instead of plain private keys!'));
     } catch (error) {
       if (error instanceof Error) {
         console.error(chalk.red('❌ Error:'), error.message);
