@@ -1,15 +1,61 @@
-## Foundry
+# Smart Contracts
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+**Foundry-based smart contracts for Injective EVM**
 
-Foundry consists of:
+This project uses Foundry for smart contract development and includes a comprehensive Makefile for easy deployment and testing.
 
--   **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
--   **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
--   **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
--   **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## 🚀 Quick Start
 
-## Documentation
+```bash
+# Install dependencies
+make install
+
+# Build contracts
+make build
+
+# Run tests
+make test
+
+# See all available commands
+make help
+```
+
+## 🔐 Secure Deployment Setup
+
+### 1. Create a secure wallet keystore (recommended)
+```bash
+make setup-wallet
+# Enter wallet name: injTest
+# Enter private key: [your-private-key]
+# Enter password: [secure-password]
+```
+
+### 2. Deploy to networks
+```bash
+# Deploy to testnet
+make deploy-testnet WALLET=injTest
+
+# Deploy to mainnet (with confirmation prompt)
+make deploy-mainnet WALLET=injTest
+```
+
+## 🌐 Supported Networks
+
+- **Local Anvil**: `make deploy-local`
+- **Injective EVM Testnet**: `make deploy-testnet WALLET=wallet-name`
+- **Injective EVM Mainnet**: `make deploy-mainnet WALLET=wallet-name`
+
+## 📋 Available Commands
+
+Run `make help` to see all available commands:
+
+- **Development**: `install`, `build`, `test`, `format`, `clean`
+- **Local**: `anvil`, `deploy-local`
+- **Security**: `setup-wallet`
+- **Deployment**: `deploy-testnet`, `deploy-mainnet`
+- **Verification**: `verify-testnet`, `verify-mainnet`
+
+## Foundry Documentation
 
 https://book.getfoundry.sh/
 
