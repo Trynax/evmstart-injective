@@ -1,69 +1,85 @@
+import { useState } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import { anvil, injectiveEvmTestnet, injectiveEvmMainnet } from '../wagmi'
 
 export function NetworkSwitcher() {
-  const { chain } = useAccount()
+  const { chain, isConnected } = useAccount()
   const { switchChain } = useSwitchChain()
-
-  const addToMetaMask = async (network: any) => {
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_addEthereumChain',
-          params: [
-            {
-              chainId: `0x${network.id.toString(16)}`,
-              chainName: network.name,
-              rpcUrls: [network.rpcUrls.default.http[0]],
-              nativeCurrency: network.nativeCurrency,
-              blockExplorerUrls: network.blockExplorers?.default?.url ? [network.blockExplorers.default.url] : undefined,
-            },
-          ],
-        })
-      } catch (error) {
-        console.error('Failed to add network:', error)
-      }
-    }
-  }
+  const [isOpen, setIsOpen] = useState(false)
 
   const networks = [
-    { config: anvil, label: 'Anvil (Local)' },
-    { config: injectiveEvmTestnet, label: 'Injective Testnet' },
-    { config: injectiveEvmMainnet, label: 'Injective Mainnet' },
+    { config: anvil, label: 'Local', icon: '🔧' },
+    { config: injectiveEvmTestnet, label: 'Testnet', icon: '🧪' },
+    { config: injectiveEvmMainnet, label: 'Mainnet', icon: '🌐' },
   ]
 
+  if (!isConnected) {
+    return null
+  }
+
+  const currentNetwork = networks.find(n => n.config.id === chain?.id)
+
   return (
-    <div className="border rounded-lg p-4">
-      <h3 className="text-lg font-semibold mb-3">Networks</h3>
-      <div className="space-y-2">
-        {networks.map(({ config, label }) => (
-          <div key={config.id} className="flex items-center justify-between">
-            <span className={`text-sm ${chain?.id === config.id ? 'font-bold text-green-600' : ''}`}>
-              {label} {chain?.id === config.id && '(Active)'}
-            </span>
-            <div className="space-x-2">
-              <button
-                onClick={() => switchChain({ chainId: config.id })}
-                className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                disabled={chain?.id === config.id}
-              >
-                Switch
-              </button>
-              <button
-                onClick={() => addToMetaMask(config)}
-                className="px-3 py-1 text-xs bg-orange-500 text-white rounded hover:bg-orange-600"
-              >
-                Add to MetaMask
-              </button>
-            </div>
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center space-x-2 bg-slate-800 hover:bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white transition-colors"
+      >
+        <span>{currentNetwork?.icon || '🔗'}</span>
+        <span>{currentNetwork?.label || chain?.name || 'Unknown'}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+      {isOpen && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 z-10" 
+            onClick={() => setIsOpen(false)}
+          />
+          
+          {/* Dropdown */}
+          <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-600 rounded-lg shadow-xl z-20">
+            {networks.map((network) => {
+              const isActive = chain?.id === network.config.id
+              
+              return (
+                <button
+                  key={network.config.id}
+                  onClick={() => {
+                    if (!isActive) {
+                      switchChain({ chainId: network.config.id })
+                    }
+                    setIsOpen(false)
+                  }}
+                  disabled={isActive}
+                  className={`w-full text-left px-4 py-3 text-sm transition-colors first:rounded-t-lg last:rounded-b-lg ${
+                    isActive 
+                      ? 'bg-purple-500/20 text-purple-300 cursor-default' 
+                      : 'text-slate-300 hover:bg-slate-700'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <span>{network.icon}</span>
+                      <span>{network.label}</span>
+                    </div>
+                    {isActive && (
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    )}
+                  </div>
+                </button>
+              )
+            })}
           </div>
-        ))}
-      </div>
-      
-      {chain && (
-        <div className="mt-3 text-xs text-gray-600">
-          Current: {chain.name} (ID: {chain.id})
-        </div>
+        </>
       )}
     </div>
   )

@@ -2,7 +2,7 @@ import './App.css'
 import { Web3Provider } from './Web3Provider'
 import { WalletConnect } from './components/WalletConnect'
 import { Counter } from './components/Counter'
-import { NetworkSwitcher } from './components/NetworkSwitcher-new'
+import { NetworkSwitcher } from './components/NetworkSwitcher'
 
 function App() {
   return (
