@@ -1,16 +1,19 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId } from 'wagmi'
 import { CONTRACT_ADDRESSES } from '../wagmi'
 import { contractAbi } from '../abi/Contract'
 import { useEffect } from 'react'
 
 export function useContract() {
+  const chainId = useChainId()
+  const contractAddress = CONTRACT_ADDRESSES[chainId.toString() as keyof typeof CONTRACT_ADDRESSES]?.Counter as `0x${string}` | undefined
+
   const { 
     data: count, 
     isLoading: isCountLoading, 
     error: readError,
     refetch 
   } = useReadContract({
-    address: CONTRACT_ADDRESSES.Counter,
+    address: contractAddress,
     abi: contractAbi,
     functionName: 'number',
   })
@@ -33,8 +36,14 @@ export function useContract() {
     }
   }, [readError])
 
-  const increment = () => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: contractAbi, functionName: 'increment' })
-  const setNumber = (value: bigint) => writeContract({ address: CONTRACT_ADDRESSES.Counter, abi: contractAbi, functionName: 'setNumber', args: [value] })
+  const increment = () => {
+    if (!contractAddress) return
+    writeContract({ address: contractAddress, abi: contractAbi, functionName: 'increment' })
+  }
+  const setNumber = (value: bigint) => {
+    if (!contractAddress) return
+    writeContract({ address: contractAddress, abi: contractAbi, functionName: 'setNumber', args: [value] })
+  }
 
   return { 
     count, 

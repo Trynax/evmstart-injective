@@ -83,15 +83,20 @@ function updateWagmiConfig(addresses) {
 
   let wagmiContent = readFileSync(wagmiPath, 'utf-8');
   
-  // Update CONTRACT_ADDRESSES for Anvil (31337)
-  if (addresses['31337']) {
-    for (const [contractName, address] of Object.entries(addresses['31337'])) {
-      const regex = new RegExp(`${contractName}: '[^']*'`);
-      wagmiContent = wagmiContent.replace(regex, `${contractName}: '${address}'`);
-      console.log(`🔗 Updated ${contractName} address in wagmi.ts`);
-    }
+  // Build the new CONTRACT_ADDRESSES object with all chains
+  const contractAddressesObj = {};
+  
+  for (const [chainId, contracts] of Object.entries(addresses)) {
+    contractAddressesObj[chainId] = contracts;
   }
-
+  
+  // Replace the CONTRACT_ADDRESSES export
+  const addressesRegex = /export const CONTRACT_ADDRESSES = \{[\s\S]*?\} as const/;
+  const newAddresses = `export const CONTRACT_ADDRESSES = ${JSON.stringify(contractAddressesObj, null, 2)} as const`;
+  
+  wagmiContent = wagmiContent.replace(addressesRegex, newAddresses);
+  
+  console.log(`🔗 Updated CONTRACT_ADDRESSES with all chain deployments`);
   writeFileSync(wagmiPath, wagmiContent);
 }
 

@@ -44,7 +44,15 @@ export const anvil = defineChain({
 })
 
 export const CONTRACT_ADDRESSES = {
-  Counter: '0x0000000000000000000000000000000000000000',
+  "31337": {
+    "Counter": "0x0000000000000000000000000000000000000000"
+  },
+  "1439": {
+    "Counter": "0x0000000000000000000000000000000000000000"
+  },
+  "1776": {
+    "Counter": "0x0000000000000000000000000000000000000000"
+  }
 } as const
 
 export const config = createConfig({
