@@ -6,16 +6,15 @@
 
 ### 🏗️ **Complete Development Stack**
 - **Smart Contracts**: Pre-configured Foundry framework with example Counter contract
-- **Modern Frontend**: React 19 + Vite 7 + TypeScript + TailwindCSS 4 + wagmi v2
+- **Modern Frontend**: React + Vite + TypeScript + TailwindCSS  + wagmi 
 - **Auto-Deployment**: One-command deployment to local Anvil with frontend integration
 - **Multi-Network Ready**: Anvil (local), Injective EVM Testnet, and Mainnet configs
 
 ### ⚡ **Developer Experience**
 - **Zero Configuration**: Works out of the box with sensible defaults
 - **Live Contract Updates**: Automatic ABI generation and address updates
-- **Secure Wallet Management**: Built-in keystore creation and management
-- **Type Safety**: Full TypeScript support with generated contract types
-- **Hot Reloading**: Both contracts and frontend with instant feedback
+- **Secure Wallet**: use keystore creation and management
+
 
 ## 🚀 Quick Start
 
@@ -256,4 +255,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built with ❤️ for the Injective EVM ecosystem**
 
-Start building the future of DeFi → `npx evmstart-injective my-dapp`
+Start building the future of finance → `npx evmstart-injective my-dapp`
