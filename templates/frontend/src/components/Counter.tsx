@@ -2,6 +2,13 @@ import { useState } from 'react'
 import { useAccount, useChainId } from 'wagmi'
 import { useContract } from '../hooks/useContract'
 import { CONTRACT_ADDRESSES } from '../wagmi'
+import { WalletConnect } from './WalletConnect'
+import { NetworkSwitcher } from './NetworkSwitcher'
+import metamaskLogo from '../assets/metamaskLogo.svg'
+import braveLogo from '../assets/braveLogo.svg'
+import leapLogo from '../assets/leapLogo.svg'
+import keplrLogo from '../assets/keplrLogo.png'
+import walletLogo from '../assets/walletLogo.svg'
 
 export function Counter() {
   const { isConnected, chain } = useAccount()
@@ -13,11 +20,47 @@ export function Counter() {
 
   if (!isConnected) {
     return (
-      <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 text-center">
-        <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-          <span className="text-2xl">🔌</span>
+      <div className="w-full max-w-lg mx-auto">
+
+        <div className="bg-transparent border border-[#2A3441] rounded-2xl p-8 relative ">
+       
+          <div className="flex justify-start mb-8">
+            <NetworkSwitcher />
+          </div>
+          
+ 
+          <div className="text-center space-y-8">
+       
+            <div className="flex justify-center items-center space-x-8 my-8">
+      
+              <div className="absolute bottom-4 left-8">
+                <img src={metamaskLogo} alt="MetaMask" className="w-8 h-8" />
+              </div>
+   
+              <div className="absolute bottom-4 right-8">
+                <img src={braveLogo} alt="Brave" className="w-8 h-8" />
+              </div>
+              
+             
+              <div className="absolute top-4 right-16">
+                <img src={leapLogo} alt="Leap" className="w-8 h-8" />
+              </div>
+    
+              <div className="absolute ">
+                <img src={keplrLogo} alt="Keplr" className="w-8 h-8" />
+              </div>
+        
+              <div className="absolute top-4 left-16">
+                <img src={walletLogo} alt="WalletConnect" className="w-8 h-8" />
+              </div>
+            </div>
+   
+            <div className="space-y-4">
+              <h3 className="text-white text-xl font-medium">Connect wallet to get started</h3>
+              <WalletConnect />
+            </div>
+          </div>
         </div>
-        <p className="text-slate-400">Connect your wallet to get started</p>
       </div>
     )
   }
@@ -36,7 +79,7 @@ export function Counter() {
 
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8">
-      {/* Counter Display */}
+
       <div className="text-center mb-8">
         <div className="text-6xl font-bold text-white mb-2">
           {isCountLoading ? (
@@ -48,7 +91,6 @@ export function Counter() {
         <p className="text-slate-400">Current Count</p>
       </div>
 
-      {/* Action Buttons */}
       <div className="space-y-4">
         <button
           onClick={increment}
@@ -65,7 +107,7 @@ export function Counter() {
           )}
         </button>
 
-        {/* Custom Value Input */}
+ 
         <div className="flex space-x-3">
           <input
             type="number"
@@ -97,7 +139,7 @@ export function Counter() {
         </button>
       </div>
 
-      {/* Status Messages */}
+
       {isSuccess && (
         <div className="mt-4 bg-green-500/20 border border-green-500/50 rounded-lg p-3 text-green-400 text-sm text-center">
           ✅ Transaction successful!
