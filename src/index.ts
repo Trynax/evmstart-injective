@@ -214,115 +214,26 @@ async function createProjectFromTemplates(projectName: string): Promise<string> 
 }
 
 async function createInitialFiles(projectPath: string, projectName: string): Promise<void> {
-  // Create main README
-  const readmeContent = `# ${projectName}
+  const templatesDir = join(__dirname, '..', 'templates');
+  
+  // Helper function to process template files
+  const processTemplate = (templatePath: string, outputPath: string) => {
+    const templateContent = readFileSync(templatePath, 'utf-8');
+    const processedContent = templateContent.replace(/\{\{PROJECT_NAME\}\}/g, projectName);
+    writeFileSync(outputPath, processedContent);
+  };
 
-Full-stack Injective EVM dApp scaffolded from templates.
+  // Create main README from template
+  processTemplate(
+    join(templatesDir, 'README.md'),
+    join(projectPath, 'README.md')
+  );
 
-## Project Structure
-
-\`\`\`
-${projectName}/
-├── contracts/   # Foundry + Solidity (Counter example, tests, deploy script)
-├── frontend/    # React + Vite + TailwindCSS + wagmi/viem
-└── README.md
-\`\`\`
-
-## Quick Start
-
-### Frontend
-
-\`\`\`bash
-cd frontend
-npm install
-npm run dev
-\`\`\`
-
-Then update the following in 
-1. Set a valid RPC URL for Injective EVM.
-2. Set your WalletConnect projectId.
-3. Set 
-
-Open http://localhost:5173
-
-### Contracts
-
-\`\`\`bash
-cd contracts
-forge install
-forge build
-forge test
-\`\`\`
-
-Deploy the Counter script (adjust network/rpc):
-
-\`\`\`bash
-forge script script/Counter.s.sol --rpc-url <rpc> --broadcast
-\`\`\`
-
-After deployment, copy the deployed address into 
- (frontend) so the app points at your contract.
-
-## Notes
-
-- Requires Node.js >= 20.19 for Vite 7.
-- The frontend includes wagmi/viem and a Counter UI wired to the contract.
-`;
-
-  writeFileSync(join(projectPath, 'README.md'), readmeContent);
-
-  // Create .gitignore
-  const gitignoreContent = `# Dependencies
-node_modules/
-
-# Build outputs
-dist/
-build/
-out/
-
-# Environment variables
-.env
-.env.local
-.env.production
-
-# IDE
-.vscode/
-.idea/
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Foundry
-cache/
-broadcast/
-
-# Logs
-*.log
-`;
-
-  writeFileSync(join(projectPath, '.gitignore'), gitignoreContent);
-
-  // Create contracts README
-  const contractsReadme = `# Smart Contracts
-
-This directory contains the smart contracts for ${projectName}.
-
-## Getting Started
-
-\`\`\`bash
-# Initialize Foundry (coming in Stage 3)
-forge init
-
-# Build contracts
-forge build
-
-# Run tests
-forge test
-\`\`\`
-`;
-
-  writeFileSync(join(projectPath, 'contracts', 'README.md'), contractsReadme);
+  // Create .gitignore from template
+  processTemplate(
+    join(templatesDir, '.gitignore'),
+    join(projectPath, '.gitignore')
+  );
 }
 
 // Update frontend wagmi.ts with deployed contract address
